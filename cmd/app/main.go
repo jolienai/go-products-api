@@ -24,7 +24,7 @@ func main() {
 	encoderConfig := ecszap.NewDefaultEncoderConfig()
 	core := ecszap.NewCore(encoderConfig, os.Stdout, zap.DebugLevel)
 	logger := zap.New(core, zap.AddCaller())
-	logger = logger.With(zap.String("app", "myapp")).With(zap.String("environment", "psm"))
+	logger = logger.With(zap.String("app", "products-api")).With(zap.String("environment", "local"))
 
 	logger.Info("Starting products-api...")
 
@@ -32,8 +32,6 @@ func main() {
 	if connectionString == "" {
 		panic("POSTGRES_CONNECTION_STRING environment variable must be set")
 	}
-
-	logger.Error("connectionString")
 
 	//db, err := gorm.Open("postgres", "host=localhost port=5432 user=testuser dbname=productsdb password=123456 sslmode=disable")
 	db, err := gorm.Open("postgres", connectionString)
@@ -47,23 +45,19 @@ func main() {
 	logger.Info("Migrations applied...")
 
 	logger.Info("Starting jobs...")
-	job := jobs.NewJob(repository)
+	job := jobs.NewJob(repository, logger)
 	job.ScheduleProductBulkJob()
 	if err != nil {
 		logger.Error(err.Error())
 	}
 	logger.Info("Jobs started...")
 
-	// controllers
 	controller := controllers.NewProductsController(repository)
-
-	// routes
 	router := gin.Default()
 	v1 := router.Group("/v1")
 	{
 		v1.POST("/products/bulk", controller.UploadFile)
 		v1.GET("/products/:sku", controller.GetProductBySku)
 	}
-
 	router.Run(":8080")
 }

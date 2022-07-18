@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 
 	"github.com/jolienai/go-products-api/cmd/app/dtos"
@@ -46,17 +44,6 @@ func (database *database) AutoMigrate() {
 }
 
 func (database *database) GetProductBySkuQuery(sku string) (product []*Product, err error) {
-
-	fmt.Println(fmt.Sprintf("sku: %s", sku))
-
-	/*
-		db, err := gorm.Open("postgres", "host=localhost port=5432 user=testuser dbname=productsdb password=123456 sslmode=disable")
-		if err != nil {
-			return nil, err
-		}
-		defer db.Close()
-	*/
-
 	var products []*Product
 	if err := database.db.Where("sku = ?", sku).Find(&products).Error; err != nil {
 		return nil, err
@@ -66,7 +53,6 @@ func (database *database) GetProductBySkuQuery(sku string) (product []*Product, 
 }
 
 func (database *database) AddFileToProccess(filepath string) error {
-
 	pendingCsvProductsFile := &ProductBulkUpdateFromCsvFile{Filename: filepath, Status: "pending"}
 	database.db.Create(pendingCsvProductsFile)
 
@@ -74,17 +60,10 @@ func (database *database) AddFileToProccess(filepath string) error {
 }
 
 func (database *database) BulkProducts(productToUpdate []*dtos.ProductCsv) error {
-
-	db, err := gorm.Open("postgres", "host=localhost port=5432 user=testuser dbname=productsdb password=123456 sslmode=disable")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
 	for _, p := range productToUpdate {
 		product := &Product{Sku: p.Sku, Country: p.Country, Name: p.Name, Quantity: p.Quantity}
-		if db.Model(&product).Where("sku = ? AND country = ?", p.Sku, p.Country).Updates(Product{Quantity: p.Quantity}).RowsAffected == 0 {
-			db.Create(&product)
+		if database.db.Model(&product).Where("sku = ? AND country = ?", p.Sku, p.Country).Updates(Product{Quantity: p.Quantity}).RowsAffected == 0 {
+			database.db.Create(&product)
 		}
 	}
 
@@ -92,7 +71,6 @@ func (database *database) BulkProducts(productToUpdate []*dtos.ProductCsv) error
 }
 
 func (database *database) GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int64) {
-
 	var productToCreateOrUpdate = ProductBulkUpdateFromCsvFile{}
 	result := database.db.Where("status=?", "pending").First(&productToCreateOrUpdate)
 
@@ -100,7 +78,6 @@ func (database *database) GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int6
 }
 
 func (database *database) UpdateCsvFileStatusToProcessed(file ProductBulkUpdateFromCsvFile) bool {
-
 	if database.db.Model(&file).Where("id = ?", file.ID).Updates(ProductBulkUpdateFromCsvFile{Status: "processed"}).RowsAffected > 0 {
 		return true
 	}

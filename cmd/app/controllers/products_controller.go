@@ -43,8 +43,13 @@ func (controller ProductsController) GetProductBySku(c *gin.Context) {
 		return
 	}
 
+	productsDto := make([]dtos.ProductDto, 0, len(products))
+	for _, p := range products {
+		productsDto = append(productsDto, dtos.ProductDto{Sku: p.Sku, Name: p.Name, Country: p.Country, Stock: p.Quantity})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"products": products,
+		"products": productsDto,
 	})
 }
 
