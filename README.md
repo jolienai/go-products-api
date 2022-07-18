@@ -99,6 +99,8 @@ curl GET http://localhost:8080/v1/products/e920c573f128
 }
 ```
 
+Note: You also can use the Postman collection products-api-postman_colq.json where you can find also an example of the PATCH method to consume a product and update its stock if possible.
+
 ## Known issues
 
 - The connection between the postgres container and the app, which is not working now.
