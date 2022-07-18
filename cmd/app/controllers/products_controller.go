@@ -25,6 +25,44 @@ func NewProductsController(repository database.ProductsRepository) *ProductsCont
 	}
 }
 
+func (controller ProductsController) CosumeProduct(c *gin.Context) {
+	request := dtos.CosumeProductRequest{}
+	err := c.BindJSON(&request)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if request.Sku == "" || request.Quantity <= 0 || request.Country == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "sku, quantity and country are required",
+		})
+		return
+	}
+
+	getchannel := make(chan database.Product)
+	go controller.repository.GetProductBySkuAndCountry(request.Sku, request.Country, getchannel)
+	product := <-getchannel
+
+	if request.Quantity > product.Quantity {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "product not found or stock insufficient",
+		})
+		return
+	}
+
+	actual := (product.Quantity - request.Quantity)
+
+	fmt.Println("product quantity:", product.Quantity)
+	fmt.Println("requested quantity:", request.Quantity)
+	fmt.Println("updating product quantity:", actual)
+
+	updatechannel := make(chan bool)
+	go controller.repository.UpdateProduct(product.Sku, product.Country, actual, updatechannel)
+	updated := <-updatechannel
+
+	c.JSON(http.StatusOK, gin.H{"result": updated})
+}
+
 func (controller ProductsController) GetProductBySku(c *gin.Context) {
 	sku := c.Param("sku")
 
@@ -35,7 +73,7 @@ func (controller ProductsController) GetProductBySku(c *gin.Context) {
 		return
 	}
 
-	products, err := controller.repository.GetProductBySkuQuery(sku)
+	products, err := controller.repository.GetProductBySku(sku)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

@@ -20,7 +20,6 @@ import (
 )
 
 func main() {
-
 	encoderConfig := ecszap.NewDefaultEncoderConfig()
 	core := ecszap.NewCore(encoderConfig, os.Stdout, zap.DebugLevel)
 	logger := zap.New(core, zap.AddCaller())
@@ -57,6 +56,7 @@ func main() {
 	{
 		v1.POST("/products/bulk", controller.UploadFile)
 		v1.GET("/products/:sku", controller.GetProductBySku)
+		v1.PATCH("/products", controller.CosumeProduct)
 	}
 	router.Run(":8080")
 }

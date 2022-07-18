@@ -21,7 +21,9 @@ type ProductBulkUpdateFromCsvFile struct {
 }
 
 type ProductsRepository interface {
-	GetProductBySkuQuery(sku string) (product []*Product, err error)
+	GetProductBySkuAndCountry(sku string, country string, product chan<- Product)
+	GetProductBySku(sku string) (product []*Product, err error)
+	UpdateProduct(sku string, country string, quantity int, done chan<- bool)
 	AddFileToProccess(filepath string) error
 	GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int64)
 	UpdateCsvFileStatusToProcessed(file ProductBulkUpdateFromCsvFile) bool
@@ -43,7 +45,24 @@ func (database *database) AutoMigrate() {
 	database.db.AutoMigrate(&ProductBulkUpdateFromCsvFile{})
 }
 
-func (database *database) GetProductBySkuQuery(sku string) (product []*Product, err error) {
+func (database *database) UpdateProduct(sku string, country string, quantity int, updated chan<- bool) {
+	product := Product{Sku: sku, Country: country, Quantity: quantity}
+	if database.db.Model(&product).Where("sku = ? AND country = ?", sku, country).Update(Product{Quantity: quantity}).RowsAffected == 0 {
+		updated <- false
+	}
+	updated <- true
+}
+
+func (database *database) GetProductBySkuAndCountry(sku string, country string, product chan<- Product) {
+	productFromDb := Product{}
+	result := database.db.Where("sku = ? AND country = ?", sku, country).First(&productFromDb)
+	if result.RowsAffected == 0 {
+		product <- Product{Quantity: 0}
+	}
+	product <- productFromDb
+}
+
+func (database *database) GetProductBySku(sku string) (product []*Product, err error) {
 	var products []*Product
 	if err := database.db.Where("sku = ?", sku).Find(&products).Error; err != nil {
 		return nil, err
