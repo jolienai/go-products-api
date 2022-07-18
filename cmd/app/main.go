@@ -33,7 +33,6 @@ func main() {
 		panic("POSTGRES_CONNECTION_STRING environment variable must be set")
 	}
 
-	//db, err := gorm.Open("postgres", "host=localhost port=5432 user=testuser dbname=productsdb password=123456 sslmode=disable")
 	db, err := gorm.Open("postgres", connectionString)
 	if err != nil {
 		panic(err.Error())
