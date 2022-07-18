@@ -50,14 +50,8 @@ func (controller ProductsController) CosumeProduct(c *gin.Context) {
 		return
 	}
 
-	actual := (product.Quantity - request.Quantity)
-
-	fmt.Println("product quantity:", product.Quantity)
-	fmt.Println("requested quantity:", request.Quantity)
-	fmt.Println("updating product quantity:", actual)
-
 	updatechannel := make(chan bool)
-	go controller.repository.UpdateProduct(product.Sku, product.Country, actual, updatechannel)
+	go controller.repository.UpdateProduct(product.Sku, product.Country, (product.Quantity - request.Quantity), updatechannel)
 	updated := <-updatechannel
 
 	c.JSON(http.StatusOK, gin.H{"result": updated})

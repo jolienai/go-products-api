@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "d6f62491-6989-415a-a855-0bd1707e1652",
+		"name": "products-api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "bulk-update",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/jolienai/Downloads/files/challenge_1_ecommerce_stock_file_2.csv"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/products/bulk",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"products",
+						"bulk"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get_products_by_sku",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/v1/products/cbf87a9be799",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"products",
+						"cbf87a9be799"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cosume-product",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"sku\" : \"cbf87a9be799\",\n    \"country\" : \"dz\",\n    \"quantity\" : 47\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/products",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"products"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
