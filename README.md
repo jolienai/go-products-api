@@ -33,6 +33,19 @@ country,sku,name,stock_change
 2. GET /products/:sku
    Returns a list of products for the specified sku, passed in the url
 
+3. PATCH /products
+   Consume products if the is enough quantity in stock. It returns bad requests if the quantity is too high or product was not found in teh database.
+
+Request body example:
+
+```json
+{
+  "sku": "cbf87a9be799",
+  "country": "dz",
+  "quantity": 1
+}
+```
+
 ## Run products-api locally
 
 1. Set environment variable
