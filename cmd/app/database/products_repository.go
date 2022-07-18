@@ -47,7 +47,7 @@ func (database *database) AutoMigrate() {
 
 func (database *database) UpdateProduct(sku string, country string, quantity int, updated chan<- bool) {
 	product := Product{Sku: sku, Country: country, Quantity: quantity}
-	if database.db.Model(&product).Where("sku = ? AND country = ?", sku, country).Update(Product{Quantity: quantity}).RowsAffected == 0 {
+	if database.db.Model(&product).Where("sku = ? AND country = ?", sku, country).Update("quantity", quantity).RowsAffected == 0 {
 		updated <- false
 	}
 	updated <- true
