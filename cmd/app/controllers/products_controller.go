@@ -26,13 +26,14 @@ func NewProductsController(repository database.ProductsRepository) *ProductsCont
 }
 
 func (controller ProductsController) CosumeProduct(c *gin.Context) {
+	sku := c.Param("sku")
 	request := dtos.CosumeProductRequest{}
 	err := c.BindJSON(&request)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if request.Sku == "" || request.Quantity <= 0 || request.Country == "" {
+	if sku == "" || request.Quantity <= 0 || request.Country == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "sku, quantity and country are required",
 		})
@@ -40,7 +41,7 @@ func (controller ProductsController) CosumeProduct(c *gin.Context) {
 	}
 
 	getchannel := make(chan database.Product)
-	go controller.repository.GetProductBySkuAndCountry(request.Sku, request.Country, getchannel)
+	go controller.repository.GetProductBySkuAndCountry(sku, request.Country, getchannel)
 	product := <-getchannel
 
 	if request.Quantity > product.Quantity {

@@ -56,7 +56,7 @@ func main() {
 	{
 		v1.POST("/products/bulk", controller.UploadFile)
 		v1.GET("/products/:sku", controller.GetProductBySku)
-		v1.PATCH("/products", controller.CosumeProduct)
+		v1.PATCH("/products/:sku/consume", controller.CosumeProduct)
 	}
 	router.Run(":8080")
 }
