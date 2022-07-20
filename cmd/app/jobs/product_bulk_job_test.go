@@ -16,7 +16,6 @@ func TestDeduplicateProducts(t *testing.T) {
 		sample = append(sample, &dtos.ProductCsv{Sku: "123", Name: "test", Country: "US", Quantity: 1})
 
 		fmt.Println(len(sample))
-
 		result := deduplicateProducts(sample)
 
 		if len(result) <= 0 {
