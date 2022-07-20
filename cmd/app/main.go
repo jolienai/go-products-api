@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/jolienai/go-products-api/cmd/app/controllers"
@@ -13,10 +11,12 @@ import (
 
 	"github.com/jolienai/go-products-api/cmd/app/jobs"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"go.elastic.co/ecszap"
 	"go.uber.org/zap"
+
+	"gorm.io/driver/postgres"
 )
 
 func main() {
@@ -32,7 +32,9 @@ func main() {
 		panic("POSTGRES_CONNECTION_STRING environment variable must be set")
 	}
 
-	db, err := gorm.Open("postgres", connectionString)
+	//db, err := gorm.Open("postgres", connectionString)
+	dsn := os.Getenv("POSTGRES_CONNECTION_STRING")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err.Error())
 	}

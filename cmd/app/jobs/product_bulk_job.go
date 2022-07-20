@@ -43,7 +43,7 @@ func (job Job) ProductBulkJob() error {
 		}
 
 		job.logger.Info(fmt.Sprintf("Processing: %s with %d rows", csv.Filename, len(products)))
-		err = job.repository.BulkProducts(products)
+		err = job.repository.UpsertProducts(products)
 		if err != nil {
 			return err
 		}

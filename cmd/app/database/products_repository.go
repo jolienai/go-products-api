@@ -1,15 +1,16 @@
 package database
 
 import (
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/jolienai/go-products-api/cmd/app/dtos"
 )
 
 type Product struct {
 	gorm.Model
-	Sku      string `gorm:"index"`
-	Country  string
+	Sku      string `gorm:"index:,unique,composite:myname"`
+	Country  string `gorm:"index:,unique,composite:myname"`
 	Name     string
 	Quantity int
 }
@@ -28,6 +29,7 @@ type ProductsRepository interface {
 	GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int64)
 	UpdateCsvFileStatusToProcessed(file ProductBulkUpdateFromCsvFile) bool
 	BulkProducts(productToUpdate []*dtos.ProductCsv) error
+	UpsertProducts(productToUpdate []*dtos.ProductCsv) error
 }
 
 type database struct {
@@ -89,6 +91,28 @@ func (database *database) BulkProducts(productToUpdate []*dtos.ProductCsv) error
 	return nil
 }
 
+func (database *database) UpsertProducts(productToUpdate []*dtos.ProductCsv) error {
+	products := make([]Product, 0)
+	for _, p := range productToUpdate {
+		product := Product{Sku: p.Sku, Country: p.Country, Name: p.Name, Quantity: p.Quantity}
+		products = append(products, product)
+	}
+
+	//TODO: getting ERROR: ON CONFLICT DO UPDATE command cannot affect row a second time (SQLSTATE 21000)
+	// when processing the secound file
+	// issue related https://github.com/go-gorm/gorm/issues/5007
+	err := database.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "sku"}, {Name: "country"}},
+		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
+	}).CreateInBatches(&products, 5000).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (database *database) GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int64) {
 	var productToCreateOrUpdate = ProductBulkUpdateFromCsvFile{}
 	result := database.db.Where("status=?", "pending").First(&productToCreateOrUpdate)
@@ -97,9 +121,5 @@ func (database *database) GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int6
 }
 
 func (database *database) UpdateCsvFileStatusToProcessed(file ProductBulkUpdateFromCsvFile) bool {
-	if database.db.Model(&file).Where("id = ?", file.ID).Updates(ProductBulkUpdateFromCsvFile{Status: "processed"}).RowsAffected > 0 {
-		return true
-	}
-
-	return false
+	return database.db.Model(&file).Where("id = ?", file.ID).Updates(ProductBulkUpdateFromCsvFile{Status: "processed"}).RowsAffected > 0
 }
