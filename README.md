@@ -108,12 +108,7 @@ Note: You also can use the Postman collection products-api-postman_colq.json whe
 ### Improvements
 
 - Improve bulk insert and update performance, even tough it is done 34k products in less than 2 min done by the job.
+
+  - Solved by using the gorm package v2, see more details here https://gorm.io/docs/v2_release_note.html#Upsert
+
 - The minutes set in the cron job scheduler should be inside a configuration file or env variable, for instance.
-
-logs for the job
-
-```json
-{"log.level":"info","@timestamp":"2022-07-18T19:39:51.977+0100","log.origin":{"file.name":"jobs/product_bulk_job.go","file.line":45},"message":"Processing: product_bulk_files/challenge_1_ecommerce_stock_file_1.csv with 31995 rows","app":"products-api","environment":"local","ecs.version":"1.6.0"}
-
-{"log.level":"info","@timestamp":"2022-07-18T19:41:12.421+0100","log.origin":{"file.name":"jobs/product_bulk_job.go","file.line":52},"message":"File processed: product_bulk_files/challenge_1_ecommerce_stock_file_1.csv","app":"products-api","environment":"local","ecs.version":"1.6.0"}
-```
