@@ -28,7 +28,6 @@ type ProductsRepository interface {
 	AddFileToProccess(filepath string) error
 	GetPedingCsvFile() (ProductBulkUpdateFromCsvFile, int64)
 	UpdateCsvFileStatusToProcessed(file ProductBulkUpdateFromCsvFile) bool
-	BulkProducts(productToUpdate []*dtos.ProductCsv) error
 	UpsertProducts(productToUpdate []*dtos.ProductCsv) error
 }
 
@@ -76,17 +75,6 @@ func (database *database) GetProductBySku(sku string) (product []*Product, err e
 func (database *database) AddFileToProccess(filepath string) error {
 	pendingCsvProductsFile := &ProductBulkUpdateFromCsvFile{Filename: filepath, Status: "pending"}
 	database.db.Create(pendingCsvProductsFile)
-
-	return nil
-}
-
-func (database *database) BulkProducts(productToUpdate []*dtos.ProductCsv) error {
-	for _, p := range productToUpdate {
-		product := &Product{Sku: p.Sku, Country: p.Country, Name: p.Name, Quantity: p.Quantity}
-		if database.db.Model(&product).Where("sku = ? AND country = ?", p.Sku, p.Country).Updates(Product{Quantity: p.Quantity}).RowsAffected == 0 {
-			database.db.Create(&product)
-		}
-	}
 
 	return nil
 }

@@ -16,7 +16,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/jolienai/Downloads/files/challenge_1_ecommerce_stock_file_2.csv"
+							"src": "/Users/jolienai/Downloads/files/e920c573f128.csv"
 						}
 					]
 				},
@@ -64,7 +64,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sku\" : \"cbf87a9be799\",\n    \"country\" : \"dz\",\n    \"quantity\" : 47\n}",
+					"raw": "{\n    \"country\" : \"eg\",\n    \"quantity\" : 2\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -72,7 +72,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/v1/products",
+					"raw": "http://localhost:8080/v1/products/cbf87a9be799/consume",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -80,7 +80,9 @@
 					"port": "8080",
 					"path": [
 						"v1",
-						"products"
+						"products",
+						"cbf87a9be799",
+						"consume"
 					]
 				}
 			},
