@@ -6,9 +6,10 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-co-op/gocron v1.15.0
 	github.com/gocarina/gocsv v0.0.0-20220712153207-8b2118da4570
-	github.com/jinzhu/gorm v1.9.16
 	go.elastic.co/ecszap v1.0.1
 	go.uber.org/zap v1.21.0
+	gorm.io/driver/postgres v1.3.8
+	gorm.io/gorm v1.23.8
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lib/pq v1.10.2 // indirect
 	github.com/magefile/mage v1.13.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -47,6 +47,4 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/driver/postgres v1.3.8 // indirect
-	gorm.io/gorm v1.23.8 // indirect
 )
