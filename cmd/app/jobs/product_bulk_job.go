@@ -57,17 +57,17 @@ func (job Job) ProductBulkJob() error {
 	return nil
 }
 
-func deduplicateProducts(sample []*dtos.ProductCsv) []*dtos.ProductCsv {
+func deduplicateProducts(products []*dtos.ProductCsv) []*dtos.ProductCsv {
 	var unique []*dtos.ProductCsv
 	type key struct{ value1, value2 string }
 	m := make(map[key]int)
-	for _, v := range sample {
-		k := key{v.Sku, v.Country}
+	for _, product := range products {
+		k := key{product.Sku, product.Country}
 		if i, ok := m[k]; ok {
-			unique[i].Quantity = unique[i].Quantity + v.Quantity
+			unique[i].Quantity = unique[i].Quantity + product.Quantity
 		} else {
 			m[k] = len(unique)
-			unique = append(unique, v)
+			unique = append(unique, product)
 		}
 	}
 	return unique
