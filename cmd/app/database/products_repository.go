@@ -9,8 +9,8 @@ import (
 
 type Product struct {
 	gorm.Model
-	Sku      string `gorm:"index:,unique,composite:myname"`
-	Country  string `gorm:"index:,unique,composite:myname"`
+	Sku      string `gorm:"index:,unique,composite:sku_contry"`
+	Country  string `gorm:"index:,unique,composite:sku_contry"`
 	Name     string
 	Quantity int
 }
@@ -94,13 +94,9 @@ func (database *database) BulkProducts(productToUpdate []*dtos.ProductCsv) error
 func (database *database) UpsertProducts(productToUpdate []*dtos.ProductCsv) error {
 	products := make([]Product, 0)
 	for _, p := range productToUpdate {
-		product := Product{Sku: p.Sku, Country: p.Country, Name: p.Name, Quantity: p.Quantity}
-		products = append(products, product)
+		products = append(products, Product{Sku: p.Sku, Country: p.Country, Name: p.Name, Quantity: p.Quantity})
 	}
 
-	//TODO: getting ERROR: ON CONFLICT DO UPDATE command cannot affect row a second time (SQLSTATE 21000)
-	// when processing the secound file
-	// issue related https://github.com/go-gorm/gorm/issues/5007
 	err := database.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "sku"}, {Name: "country"}},
 		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),

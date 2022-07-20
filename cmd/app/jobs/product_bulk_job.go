@@ -42,8 +42,10 @@ func (job Job) ProductBulkJob() error {
 			return err
 		}
 
+		unique := deduplicateProducts(products)
+
 		job.logger.Info(fmt.Sprintf("Processing: %s with %d rows", csv.Filename, len(products)))
-		err = job.repository.UpsertProducts(products)
+		err = job.repository.UpsertProducts(unique)
 		if err != nil {
 			return err
 		}
@@ -53,6 +55,22 @@ func (job Job) ProductBulkJob() error {
 		}
 	}
 	return nil
+}
+
+func deduplicateProducts(sample []*dtos.ProductCsv) []*dtos.ProductCsv {
+	var unique []*dtos.ProductCsv
+	type key struct{ value1, value2 string }
+	m := make(map[key]int)
+	for _, v := range sample {
+		k := key{v.Sku, v.Country}
+		if i, ok := m[k]; ok {
+			unique[i].Quantity = unique[i].Quantity + v.Quantity
+		} else {
+			m[k] = len(unique)
+			unique = append(unique, v)
+		}
+	}
+	return unique
 }
 
 func (job Job) ScheduleProductBulkJob() error {
