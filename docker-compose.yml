@@ -26,7 +26,7 @@ services:
       - 9200:9200
 
   kibana:
-    labels:
+    labels: 
       co.elastic.logs/enabled: false
     image: docker.elastic.co/kibana/kibana:7.14.0
     depends_on:
@@ -39,7 +39,7 @@ services:
       retries: 80
     ports:
       - 5601:5601
-      
+
   db:
     image: postgres
     restart: always

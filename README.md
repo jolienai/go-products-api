@@ -103,8 +103,6 @@ Note: You also can use the Postman collection products-api-postman_colq.json whe
 
 ## Known issues
 
-- The connection between the postgres container and the app, which is not working now.
-
 ### Improvements
 
 - Improve bulk insert and update performance, even tough it is done 34k products in less than 2 min done by the job.
