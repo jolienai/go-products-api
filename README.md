@@ -8,6 +8,7 @@ A simple example of how to implement a products API in Golang using:
   - Postgres
 - ORM
   - https://gorm.io/
+  - Upsert using the gorm package v2, see more details here https://gorm.io/docs/v2_release_note.html#Upsert
 - Logger
 
   - https://pkg.go.dev/go.uber.org/zap@v1.21.0
@@ -100,13 +101,3 @@ curl GET http://localhost:8080/v1/products/e920c573f128
 ```
 
 Note: You also can use the Postman collection products-api-postman_colq.json where you can find also an example of the PATCH method to consume a product and update its stock if possible.
-
-## Known issues
-
-### Improvements
-
-- Improve bulk insert and update performance, even tough it is done 34k products in less than 2 min done by the job.
-
-  - Solved by using the gorm package v2, see more details here https://gorm.io/docs/v2_release_note.html#Upsert
-
-- The minutes set in the cron job scheduler should be inside a configuration file or env variable, for instance.
