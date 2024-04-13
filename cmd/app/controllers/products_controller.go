@@ -3,8 +3,8 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"net/http"
 	"os"
 
@@ -17,20 +17,26 @@ import (
 
 type ProductsController struct {
 	repository database.ProductsRepository
+	logger     zap.Logger
 }
 
-func NewProductsController(repository database.ProductsRepository) *ProductsController {
+func NewProductsController(repository database.ProductsRepository, logger *zap.Logger) *ProductsController {
 	return &ProductsController{
 		repository: repository,
+		logger:     *logger,
 	}
 }
 
-func (controller ProductsController) CosumeProduct(c *gin.Context) {
+func (p ProductsController) ConsumeProduct(c *gin.Context) {
 	sku := c.Param("sku")
-	request := dtos.CosumeProductRequest{}
+	request := dtos.ConsumeProductRequest{}
 	err := c.BindJSON(&request)
 	if err != nil {
-		log.Fatal(err)
+		p.logger.Error(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "not possible to parse request",
+		})
+		return
 	}
 
 	if sku == "" || request.Quantity <= 0 || request.Country == "" {
@@ -40,9 +46,9 @@ func (controller ProductsController) CosumeProduct(c *gin.Context) {
 		return
 	}
 
-	getchannel := make(chan database.Product)
-	go controller.repository.GetProductBySkuAndCountry(sku, request.Country, getchannel)
-	product := <-getchannel
+	get := make(chan database.Product)
+	go p.repository.GetProductBySkuAndCountry(sku, request.Country, get)
+	product := <-get
 
 	if request.Quantity > product.Quantity {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -51,14 +57,14 @@ func (controller ProductsController) CosumeProduct(c *gin.Context) {
 		return
 	}
 
-	updatechannel := make(chan bool)
-	go controller.repository.UpdateProduct(product.Sku, product.Country, (product.Quantity - request.Quantity), updatechannel)
-	updated := <-updatechannel
+	update := make(chan bool)
+	go p.repository.UpdateProduct(product.Sku, product.Country, product.Quantity-request.Quantity, update)
+	productUpdated := <-update
 
-	c.JSON(http.StatusOK, gin.H{"result": updated})
+	c.JSON(http.StatusOK, gin.H{"result": productUpdated})
 }
 
-func (controller ProductsController) GetProductBySku(c *gin.Context) {
+func (p ProductsController) GetProductBySku(c *gin.Context) {
 	sku := c.Param("sku")
 
 	if sku == "" {
@@ -68,7 +74,7 @@ func (controller ProductsController) GetProductBySku(c *gin.Context) {
 		return
 	}
 
-	products, err := controller.repository.GetProductBySku(sku)
+	products, err := p.repository.GetProductBySku(sku)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -86,7 +92,7 @@ func (controller ProductsController) GetProductBySku(c *gin.Context) {
 	})
 }
 
-func (controller ProductsController) UploadFile(c *gin.Context) {
+func (p ProductsController) UploadFile(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("file err : %s", err.Error()))
@@ -98,35 +104,60 @@ func (controller ProductsController) UploadFile(c *gin.Context) {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(path, os.ModeDir)
 		if err != nil {
-			log.Println(err)
+			p.logger.Error(err.Error())
+			c.String(http.StatusInternalServerError, fmt.Sprintf("Mkdir err : %s", err.Error()))
+			return
 		}
 	}
 
-	fullpath := path + "/" + filename
+	filepath := path + "/" + filename
 
-	out, err := os.Create(fullpath)
+	fileTobeProcessed, err := os.Create(filepath)
 	if err != nil {
-		log.Fatal(err)
+		p.logger.Error(err.Error())
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Create file err : %s", err.Error()))
+		return
 	}
 
-	_, err = io.Copy(out, file)
+	_, err = io.Copy(fileTobeProcessed, file)
 	if err != nil {
-		log.Fatal(err)
+		p.logger.Error(err.Error())
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Copy file err : %s", err.Error()))
+		return
 	}
-	out.Close()
-
-	in, err := os.Open(fullpath)
+	err = fileTobeProcessed.Close()
 	if err != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Close file err : %s", err.Error()))
+		return
+	}
+
+	fileSaved, err := os.Open(filepath)
+	if err != nil {
+		p.logger.Error(err.Error())
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Open saved file err : %s", err.Error()))
+		return
+	}
+	defer func(fileSaved *os.File) {
+		err := fileSaved.Close()
+		if err != nil {
+			p.logger.Error(err.Error())
+			c.String(http.StatusInternalServerError, fmt.Sprintf("Close saved file err : %s", err.Error()))
+			return
+		}
+	}(fileSaved)
+
+	var products []*dtos.ProductCsv
+	if err := gocsv.UnmarshalFile(fileSaved, &products); err != nil {
 		panic(err)
 	}
-	defer in.Close()
 
-	products := []*dtos.ProductCsv{}
-	if err := gocsv.UnmarshalFile(in, &products); err != nil {
-		panic(err)
+	err = p.repository.AddFileToProcess(filepath)
+	if err != nil {
+		c.JSON(http.StatusAccepted, gin.H{
+			"message": fmt.Sprintf("Error when saving the file: %s with %d records :-(", filename, len(products)),
+		})
+		return
 	}
-
-	controller.repository.AddFileToProccess(fullpath)
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": fmt.Sprintf("File received: %s with %d products and will be processed soon :-)", filename, len(products)),

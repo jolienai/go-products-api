@@ -1,6 +1,6 @@
 package dtos
 
-type CosumeProductRequest struct {
+type ConsumeProductRequest struct {
 	Country  string `json:"country"`
 	Quantity int    `json:"quantity"`
 }

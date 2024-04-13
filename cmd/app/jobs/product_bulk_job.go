@@ -27,7 +27,7 @@ func NewJob(repository database.ProductsRepository, logger *zap.Logger) *Job {
 }
 
 func (job Job) ProductBulkJob() error {
-	csv, rows := job.repository.GetPedingCsvFile()
+	csv, rows := job.repository.GetPendingCsvFile()
 	if rows > 0 {
 		job.logger.Info(fmt.Sprintf("found file pending: %s and ID: %d", csv.Filename, csv.ID))
 
@@ -35,17 +35,23 @@ func (job Job) ProductBulkJob() error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer func(file *os.File) {
+			err := file.Close()
+			if err != nil {
+				job.logger.Error(fmt.Sprintf("failed to close file: %s", err))
+			}
+		}(file)
 
-		products := []*dtos.ProductCsv{}
+		var products []*dtos.ProductCsv
 		if err := gocsv.UnmarshalFile(file, &products); err != nil {
 			return err
 		}
 
-		unique := deduplicateProducts(products)
+		productsToUpsert := deduplicateProducts(products)
 
-		job.logger.Info(fmt.Sprintf("Processing: %s with %d rows", csv.Filename, len(products)))
-		err = job.repository.UpsertProducts(unique)
+		job.logger.Info(fmt.Sprintf("processing: %s with %d rows", csv.Filename, len(products)))
+
+		err = job.repository.UpsertProducts(productsToUpsert)
 		if err != nil {
 			return err
 		}
@@ -75,11 +81,10 @@ func deduplicateProducts(products []*dtos.ProductCsv) []*dtos.ProductCsv {
 
 func (job Job) ScheduleProductBulkJob() error {
 	scheduler := gocron.NewScheduler(time.UTC).SingletonMode()
-	//TODO: add the time in some configurations
 	_, err := scheduler.Every("1m").Do(func() {
-		joberr := job.ProductBulkJob()
-		if joberr != nil {
-			fmt.Println(joberr.Error())
+		jobErr := job.ProductBulkJob()
+		if jobErr != nil {
+			fmt.Println(jobErr.Error())
 		}
 	})
 	if err != nil {
